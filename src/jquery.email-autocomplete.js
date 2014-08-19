@@ -1,11 +1,21 @@
+/*
+ *  jQuery Email Autocomplete - v0.0.2
+ *  https://github.com/10w042/email-autocomplete
+ *  A jQuery plugin that suggests and autocompletes the domain in email fields.
+ *  
+ *  Some fixes/modifications by Derek Reynolds 8/18/2014
+ *
+ *  Made by Low Yong Zhen <cephyz@gmail.com>
+ *  Under MIT License < http://yzlow.mit-license.org>
+ */
 "use strict";
 
 (function ($, window, document, undefined) {
 
   var pluginName = "emailautocomplete";
   var defaults = {
-    suggClass: "eac-sugg",
-    domains: ["yahoo.com" ,"hotmail.com" ,"gmail.com" ,"me.com" ,"aol.com" ,"mac.com" ,"live.com" ,"comcast.net" ,"googlemail.com" ,"msn.com" ,"hotmail.co.uk" ,"yahoo.co.uk" ,"facebook.com" ,"verizon.net" ,"sbcglobal.net" ,"att.net" ,"gmx.com" ,"outlook.com" ,"icloud.com"]
+    suggClass: "email-autocomplete-suggestion",
+    domains: [ "alltel.net","aol.com", "comcast.net", "embarqmail.com", "gmail.com", "hotmail.com", "msn.com", "nd.edu", "ohio.edu", "osu.edu", "sbcglobal.net", "outlook.com", "verizon.net","vt.edu", "windstream.net", "yahoo.com"]    
   };
 
   function Plugin(elem, options) {
@@ -23,6 +33,11 @@
       if (!Array.prototype.indexOf) {
         this.doIndexOf();
       }
+
+      //bind handlers
+      this.$field.on("keyup.eac", $.proxy(this.displaySuggestion, this));
+
+      this.$field.on("blur.eac", $.proxy(this.autocomplete, this));
 
       //get input padding,border and margin to offset text
       this.fieldLeftOffset = (this.$field.outerWidth(true) - this.$field.width()) / 2;
@@ -47,7 +62,9 @@
 
       //create the suggestion overlay
       /* touchstart jquery 1.7+ */
-      var heightPad = (this.$field.outerHeight(true) - this.$field.height()) / 2; //padding+border
+       // var heightPad = (this.$field.outerHeight(true) - this.$field.height()) / 2  //padding+border
+       // DRR 08/19/2014 added 3.5 offset to fine tune position for AEPUtilities
+      var heightPad = (this.$field.outerHeight(true) - this.$field.height()) / 2 - 3.5; //padding+border - 3.5 
       this.$suggOverlay = $("<span class='"+this.options.suggClass+"' />").css({
         display: "block",
         "box-sizing": "content-box", //standardize
@@ -60,45 +77,40 @@
         position: "absolute",
         top: 0,
         left: 0
-      }).insertAfter(this.$field);
+      }).insertAfter(this.$field).on("mousedown.eac touchstart.eac", $.proxy(this.autocomplete, this));
 
-      //bind events and handlers
-      this.$field.on("keyup.eac", $.proxy(this.displaySuggestion, this));
-
-      this.$field.on("keydown.eac", $.proxy(function(e){
-        if(e.which === 39 || e.which === 9){
-          this.autocomplete();
-        }
-      }, this));
-
-      this.$suggOverlay.on("mousedown.eac touchstart.eac", $.proxy(this.autocomplete, this));
     },
 
     suggest: function (str) {
       var str_arr = str.split("@");
       if (str_arr.length > 1) {
         str = str_arr.pop();
-        if (!str.length) {
+        // DRR 08/18/2014 Altered minimum character length after @ to be 2 characters to trigger suggestion
+        //if (!str.length) {
+        if (str.length < 2) {
           return "";
         }
       } else {
         return "";
       }
-
+      // DRR 08/19/2014 Added case-insensitive suggestion matching [toLowerCase()]
       var match = this._domains.filter(function (domain) {
-        return 0 === domain.indexOf(str);
+        return 0 === domain.indexOf(str.toLowerCase());
       }).shift() || "";
 
-      return match.replace(str, "");
+      return match.replace(str.toLowerCase(), "");
     },
 
     autocomplete: function () {
-      if(typeof this.suggestion === "undefined" || this.suggestion.length < 1){
+      if(typeof this.suggestion === "undefined"){
         return false;
       }
       this.$field.val(this.val + this.suggestion);
-      this.$suggOverlay.text("");
-      this.$cval.text("");
+      this.$suggOverlay.html("");
+      this.$cval.html("");
+
+      // DRR 08/18/2014 added fix to call validation after autocomplete https://github.com/10w042/email-autocomplete/issues/4 
+      this.$field.validate();
     },
 
     /**
@@ -109,14 +121,14 @@
       this.suggestion = this.suggest(this.val);
 
       if (!this.suggestion.length) {
-        this.$suggOverlay.text("");
+        this.$suggOverlay.html("");
       } else {
         e.preventDefault();
       }
 
       //update with new suggestion
-      this.$suggOverlay.text(this.suggestion);
-      this.$cval.text(this.val);
+      this.$suggOverlay.html(this.suggestion);
+      this.$cval.html(this.val);
 
       //find width of current input val so we can offset the suggestion text
       var cvalWidth = this.$cval.width();
@@ -173,3 +185,9 @@
   };
 
 })(jQuery, window, document);
+
+(function ($) {
+    $(function () {          
+        $("[data-autocomplete-enabled='true']").emailautocomplete();
+    });
+}(jQuery));
