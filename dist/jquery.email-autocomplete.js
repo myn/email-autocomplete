@@ -2,7 +2,7 @@
  *  jQuery Email Autocomplete - v0.0.2
  *  https://github.com/10w042/email-autocomplete
  *  A jQuery plugin that suggests and autocompletes the domain in email fields.
- *  
+ *
  *  Some fixes/modifications by Derek Reynolds 8/18/2014
  *
  *  Made by Low Yong Zhen <cephyz@gmail.com>
@@ -11,7 +11,6 @@
 "use strict";
 
 (function ($, window, document, undefined) {
-
     var pluginName = "emailautocomplete";
     var defaults = {
         suggClass: "eac-sugg",
@@ -28,7 +27,6 @@
 
     Plugin.prototype = {
         init: function () {
-
             //shim filter
             if (!Array.prototype.filter) {
                 this.doFilter();
@@ -73,9 +71,9 @@
 
             //create the suggestion overlay
             /* touchstart jquery 1.7+ */
-             var heightPad = (this.$field.outerHeight(true) - this.$field.height()) / 2  //padding+border
+            var heightPad = (this.$field.outerHeight(true) - this.$field.height()) / 2;  //padding+border
             // DRR 08/19/2014 added 3.5 offset to fine tune position for AEPUtilities
-            //var heightPad = (this.$field.outerHeight(true) - this.$field.height()) / 2 - 3.5; //padding+border - 3.5 
+            //var heightPad = (this.$field.outerHeight(true) - this.$field.height()) / 2 - 3.5; //padding+border - 3.5
             this.$suggOverlay = $("<span class='" + this.options.suggClass + "' />").css({
                 display: "block",
                 "box-sizing": "content-box", //standardize
@@ -89,7 +87,6 @@
                 top: 0,
                 left: 0
             }).insertAfter(this.$field).on("mousedown.eac touchstart.eac", $.proxy(this.autocomplete, this));
-
         },
 
         suggest: function (str) {
@@ -120,9 +117,9 @@
             this.$suggOverlay.html("");
             this.$cval.html("");
 
-            // DRR 08/18/2014 added fix to call validation after autocomplete https://github.com/10w042/email-autocomplete/issues/4 
+            // DRR 08/18/2014 added fix to call validation after autocomplete https://github.com/10w042/email-autocomplete/issues/4
             //this.$field.valid();
-            //this.$field.validate();            
+            //this.$field.validate();
         },
 
         /**
@@ -151,9 +148,8 @@
             }
         },
 
-
         /*
-         * filter polyfill 
+         * filter polyfill
          * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/filter
         */
 
@@ -189,13 +185,11 @@
             }
         },
 
-
         /**
          * indexof polyfill
          * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/indexOf#Polyfill
         */
         doIndexOf: function () {
-
             Array.prototype.indexOf = function (searchElement, fromIndex) {
                 if (this === undefined || this === null) {
                     throw new TypeError('"this" is null or not defined');
@@ -234,6 +228,4 @@
             }
         });
     };
-
 })(jQuery, window, document);
-
