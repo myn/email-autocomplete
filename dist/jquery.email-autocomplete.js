@@ -154,15 +154,17 @@
         */
 
         doFilter: function () {
-            Array.prototype.filter = function (fun /*, thisArg */) {               
+            Array.prototype.filter = function (fun /*, thisArg */) {
 
-                if (this === void 0 || this === null)
+                if (this === void 0 || this === null) {
                     throw new TypeError();
+                }
 
                 var t = Object(this);
                 var len = t.length >>> 0;
-                if (typeof fun !== "function")
+                if (typeof fun !== "function") {
                     throw new TypeError();
+                }
 
                 var res = [];
                 var thisArg = arguments.length >= 2 ? arguments[1] : void 0;
@@ -181,7 +183,7 @@
                 }
 
                 return res;
-            }
+            };
         },
 
         /**
