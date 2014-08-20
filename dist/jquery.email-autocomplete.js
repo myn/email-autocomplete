@@ -177,8 +177,9 @@
                         //       properties on Object.prototype and Array.prototype.
                         //       But that method's new, and collisions should be
                         //       rare, so use the more-compatible alternative.
-                        if (fun.call(thisArg, val, i, t))
+                        if (fun.call(thisArg, val, i, t)) {
                             res.push(val);
+                        }
                     }
                 }
 
