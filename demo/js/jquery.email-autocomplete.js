@@ -154,8 +154,7 @@
         */
 
         doFilter: function () {
-            Array.prototype.filter = function (fun /*, thisArg */) {
-                "use strict";
+            Array.prototype.filter = function (fun /*, thisArg */) {               
 
                 if (this === void 0 || this === null)
                     throw new TypeError();
