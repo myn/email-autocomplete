@@ -12,182 +12,228 @@
 
 (function ($, window, document, undefined) {
 
-  var pluginName = "emailautocomplete";
-  var defaults = {
-    suggClass: "email-autocomplete-suggestion",
-    domains: [ "alltel.net","aol.com", "comcast.net", "embarqmail.com", "gmail.com", "hotmail.com", "msn.com", "nd.edu", "ohio.edu", "osu.edu", "sbcglobal.net", "outlook.com", "verizon.net","vt.edu", "windstream.net", "yahoo.com"]    
-  };
+    var pluginName = "emailautocomplete";
+    var defaults = {
+        suggClass: "eac-sugg",
+        domains: ["alltel.net", "aol.com", "comcast.net", "embarqmail.com", "gmail.com", "hotmail.com", "msn.com", "nd.edu", "ohio.edu", "osu.edu", "sbcglobal.net", "outlook.com", "verizon.net", "vt.edu", "windstream.net", "yahoo.com"]
+    };
 
-  function Plugin(elem, options) {
-    this.$field = $(elem);
-    this.options = $.extend(true, {}, defaults, options); //we want deep extend
-    this._defaults = defaults;
-    this._domains = this.options.domains;
-    this.init();
-  }
+    function Plugin(elem, options) {
+        this.$field = $(elem);
+        this.options = $.extend(true, {}, defaults, options); //we want deep extend
+        this._defaults = defaults;
+        this._domains = this.options.domains;
+        this.init();
+    }
 
-  Plugin.prototype = {
-    init: function () {
+    Plugin.prototype = {
+        init: function () {
 
-      //shim indexOf
-      if (!Array.prototype.indexOf) {
-        this.doIndexOf();
-      }
+            //shim filter
+            if (!Array.prototype.filter) {
+                this.doFilter();
+            }
+            //shim indexOf
+            if (!Array.prototype.indexOf) {
+                this.doIndexOf();
+            }
 
-      //bind handlers
-      this.$field.on("keyup.eac", $.proxy(this.displaySuggestion, this));
+            //bind handlers
+            this.$field.on("keyup.eac", $.proxy(this.displaySuggestion, this));
 
-      this.$field.on("blur.eac", $.proxy(this.autocomplete, this));
+            this.$field.on("blur.eac", $.proxy(this.autocomplete, this));
 
-      //get input padding,border and margin to offset text
-      this.fieldLeftOffset = (this.$field.outerWidth(true) - this.$field.width()) / 2;
+            this.$field.on("keydown.eac", $.proxy(function (e) {
+                //  User hits enter while in field, treat as submit so autocomplete
+                if (e.which === 13) {
+                    this.autocomplete();
+                }
+            }, this));
 
-      //wrap our field
-      var $wrap = $("<div class='eac-input-wrap' />").css({
-        display: this.$field.css("display"),
-        position: "relative",
-        fontSize: this.$field.css("fontSize")
-      });
-      this.$field.wrap($wrap);
+            //get input padding,border and margin to offset text
+            this.fieldLeftOffset = (this.$field.outerWidth(true) - this.$field.width()) / 2;
 
-      //create container to test width of current val
-      this.$cval = $("<span class='eac-cval' />").css({
-        visibility: "hidden",
-        position: "absolute",
-        display: "inline-block",
-        fontFamily: this.$field.css("fontFamily"),
-        fontWeight: this.$field.css("fontWeight"),
-        letterSpacing: this.$field.css("letterSpacing")
-      }).insertAfter(this.$field);
+            //wrap our field
+            var $wrap = $("<div class='eac-input-wrap' />").css({
+                display: this.$field.css("display"),
+                position: "relative",
+                fontSize: this.$field.css("fontSize")
+            });
+            this.$field.wrap($wrap);
 
-      //create the suggestion overlay
-      /* touchstart jquery 1.7+ */
-       // var heightPad = (this.$field.outerHeight(true) - this.$field.height()) / 2  //padding+border
-       // DRR 08/19/2014 added 3.5 offset to fine tune position for AEPUtilities
-      var heightPad = (this.$field.outerHeight(true) - this.$field.height()) / 2 - 3.5; //padding+border - 3.5 
-      this.$suggOverlay = $("<span class='"+this.options.suggClass+"' />").css({
-        display: "block",
-        "box-sizing": "content-box", //standardize
-        lineHeight: this.$field.css('lineHeight'),
-        paddingTop: heightPad + "px",
-        paddingBottom: heightPad + "px",
-        fontFamily: this.$field.css("fontFamily"),
-        fontWeight: this.$field.css("fontWeight"),
-        letterSpacing: this.$field.css("letterSpacing"),
-        position: "absolute",
-        top: 0,
-        left: 0
-      }).insertAfter(this.$field).on("mousedown.eac touchstart.eac", $.proxy(this.autocomplete, this));
+            //create container to test width of current val
+            this.$cval = $("<span class='eac-cval' />").css({
+                visibility: "hidden",
+                position: "absolute",
+                display: "inline-block",
+                fontFamily: this.$field.css("fontFamily"),
+                fontWeight: this.$field.css("fontWeight"),
+                letterSpacing: this.$field.css("letterSpacing")
+            }).insertAfter(this.$field);
 
-    },
+            //create the suggestion overlay
+            /* touchstart jquery 1.7+ */
+             var heightPad = (this.$field.outerHeight(true) - this.$field.height()) / 2  //padding+border
+            // DRR 08/19/2014 added 3.5 offset to fine tune position for AEPUtilities
+            //var heightPad = (this.$field.outerHeight(true) - this.$field.height()) / 2 - 3.5; //padding+border - 3.5 
+            this.$suggOverlay = $("<span class='" + this.options.suggClass + "' />").css({
+                display: "block",
+                "box-sizing": "content-box", //standardize
+                lineHeight: this.$field.css('lineHeight'),
+                paddingTop: heightPad + "px",
+                paddingBottom: heightPad + "px",
+                fontFamily: this.$field.css("fontFamily"),
+                fontWeight: this.$field.css("fontWeight"),
+                letterSpacing: this.$field.css("letterSpacing"),
+                position: "absolute",
+                top: 0,
+                left: 0
+            }).insertAfter(this.$field).on("mousedown.eac touchstart.eac", $.proxy(this.autocomplete, this));
 
-    suggest: function (str) {
-      var str_arr = str.split("@");
-      if (str_arr.length > 1) {
-        str = str_arr.pop();
-        // DRR 08/18/2014 Altered minimum character length after @ to be 2 characters to trigger suggestion
-        //if (!str.length) {
-        if (str.length < 2) {
-          return "";
+        },
+
+        suggest: function (str) {
+            var str_arr = str.split("@");
+            if (str_arr.length > 1) {
+                str = str_arr.pop();
+                // DRR 08/18/2014 Altered minimum character length after @ to be 2 characters to trigger suggestion
+                //if (!str.length) {
+                if (str.length < 2) {
+                    return "";
+                }
+            } else {
+                return "";
+            }
+            // DRR 08/19/2014 Added case-insensitive suggestion matching [toLowerCase()]
+            var match = this._domains.filter(function (domain) {
+                return 0 === domain.indexOf(str.toLowerCase());
+            }).shift() || "";
+
+            return match.replace(str.toLowerCase(), "");
+        },
+
+        autocomplete: function () {
+            if (typeof this.suggestion === "undefined") {
+                return false;
+            }
+            this.$field.val(this.val + this.suggestion);
+            this.$suggOverlay.html("");
+            this.$cval.html("");
+
+            // DRR 08/18/2014 added fix to call validation after autocomplete https://github.com/10w042/email-autocomplete/issues/4 
+            //this.$field.valid();
+            //this.$field.validate();            
+        },
+
+        /**
+         * Displays the suggestion, handler for field keyup event
+         */
+        displaySuggestion: function (e) {
+            this.val = this.$field.val();
+            this.suggestion = this.suggest(this.val);
+
+            if (!this.suggestion.length) {
+                this.$suggOverlay.html("");
+            } else {
+                e.preventDefault();
+            }
+
+            //update with new suggestion
+            this.$suggOverlay.html(this.suggestion);
+            this.$cval.html(this.val);
+
+            //find width of current input val so we can offset the suggestion text
+            var cvalWidth = this.$cval.width();
+
+            if (this.$field.outerWidth() > cvalWidth) {
+                //offset our suggestion container
+                this.$suggOverlay.css('left', this.fieldLeftOffset + cvalWidth + "px");
+            }
+        },
+
+
+        /*
+         * filter polyfill 
+         * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/filter
+        */
+
+        doFilter: function () {
+            Array.prototype.filter = function (fun /*, thisArg */) {
+                "use strict";
+
+                if (this === void 0 || this === null)
+                    throw new TypeError();
+
+                var t = Object(this);
+                var len = t.length >>> 0;
+                if (typeof fun !== "function")
+                    throw new TypeError();
+
+                var res = [];
+                var thisArg = arguments.length >= 2 ? arguments[1] : void 0;
+                for (var i = 0; i < len; i++) {
+                    if (i in t) {
+                        var val = t[i];
+
+                        // NOTE: Technically this should Object.defineProperty at
+                        //       the next index, as push can be affected by
+                        //       properties on Object.prototype and Array.prototype.
+                        //       But that method's new, and collisions should be
+                        //       rare, so use the more-compatible alternative.
+                        if (fun.call(thisArg, val, i, t))
+                            res.push(val);
+                    }
+                }
+
+                return res;
+            }
+        },
+
+
+        /**
+         * indexof polyfill
+         * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/indexOf#Polyfill
+        */
+        doIndexOf: function () {
+
+            Array.prototype.indexOf = function (searchElement, fromIndex) {
+                if (this === undefined || this === null) {
+                    throw new TypeError('"this" is null or not defined');
+                }
+
+                var length = this.length >>> 0; // Hack to convert object.length to a UInt32
+
+                fromIndex = +fromIndex || 0;
+
+                if (Math.abs(fromIndex) === Infinity) {
+                    fromIndex = 0;
+                }
+
+                if (fromIndex < 0) {
+                    fromIndex += length;
+                    if (fromIndex < 0) {
+                        fromIndex = 0;
+                    }
+                }
+
+                for (; fromIndex < length; fromIndex++) {
+                    if (this[fromIndex] === searchElement) {
+                        return fromIndex;
+                    }
+                }
+
+                return -1;
+            };
         }
-      } else {
-        return "";
-      }
-      // DRR 08/19/2014 Added case-insensitive suggestion matching [toLowerCase()]
-      var match = this._domains.filter(function (domain) {
-        return 0 === domain.indexOf(str.toLowerCase());
-      }).shift() || "";
+    };
 
-      return match.replace(str.toLowerCase(), "");
-    },
-
-    autocomplete: function () {
-      if(typeof this.suggestion === "undefined"){
-        return false;
-      }
-      this.$field.val(this.val + this.suggestion);
-      this.$suggOverlay.html("");
-      this.$cval.html("");
-
-      // DRR 08/18/2014 added fix to call validation after autocomplete https://github.com/10w042/email-autocomplete/issues/4 
-      this.$field.validate();
-    },
-
-    /**
-     * Displays the suggestion, handler for field keyup event
-     */
-    displaySuggestion: function (e) {
-      this.val = this.$field.val();
-      this.suggestion = this.suggest(this.val);
-
-      if (!this.suggestion.length) {
-        this.$suggOverlay.html("");
-      } else {
-        e.preventDefault();
-      }
-
-      //update with new suggestion
-      this.$suggOverlay.html(this.suggestion);
-      this.$cval.html(this.val);
-
-      //find width of current input val so we can offset the suggestion text
-      var cvalWidth = this.$cval.width();
-
-      if(this.$field.outerWidth() > cvalWidth){
-        //offset our suggestion container
-        this.$suggOverlay.css('left', this.fieldLeftOffset + cvalWidth + "px");
-      }
-    },
-
-    /**
-     * indexof polyfill
-     * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/indexOf#Polyfill
-    */
-    doIndexOf: function(){
-
-        Array.prototype.indexOf = function (searchElement, fromIndex) {
-          if ( this === undefined || this === null ) {
-            throw new TypeError( '"this" is null or not defined' );
-          }
-
-          var length = this.length >>> 0; // Hack to convert object.length to a UInt32
-
-          fromIndex = +fromIndex || 0;
-
-          if (Math.abs(fromIndex) === Infinity) {
-            fromIndex = 0;
-          }
-
-          if (fromIndex < 0) {
-            fromIndex += length;
-            if (fromIndex < 0) {
-              fromIndex = 0;
+    $.fn[pluginName] = function (options) {
+        return this.each(function () {
+            if (!$.data(this, "yz_" + pluginName)) {
+                $.data(this, "yz_" + pluginName, new Plugin(this, options));
             }
-          }
-
-          for (;fromIndex < length; fromIndex++) {
-            if (this[fromIndex] === searchElement) {
-              return fromIndex;
-            }
-          }
-
-          return -1;
-        };
-      }
-  };
-
-  $.fn[pluginName] = function (options) {
-    return this.each(function () {
-      if (!$.data(this, "yz_" + pluginName)) {
-        $.data(this, "yz_" + pluginName, new Plugin(this, options));
-      }
-    });
-  };
+        });
+    };
 
 })(jQuery, window, document);
 
-(function ($) {
-    $(function () {          
-        $("[data-autocomplete-enabled='true']").emailautocomplete();
-    });
-}(jQuery));

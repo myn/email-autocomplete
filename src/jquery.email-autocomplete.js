@@ -14,7 +14,7 @@
 
     var pluginName = "emailautocomplete";
     var defaults = {
-        suggClass: "email-autocomplete-suggestion",
+        suggClass: "eac-sugg",
         domains: ["alltel.net", "aol.com", "comcast.net", "embarqmail.com", "gmail.com", "hotmail.com", "msn.com", "nd.edu", "ohio.edu", "osu.edu", "sbcglobal.net", "outlook.com", "verizon.net", "vt.edu", "windstream.net", "yahoo.com"]
     };
 
@@ -73,9 +73,9 @@
 
             //create the suggestion overlay
             /* touchstart jquery 1.7+ */
-            // var heightPad = (this.$field.outerHeight(true) - this.$field.height()) / 2  //padding+border
+             var heightPad = (this.$field.outerHeight(true) - this.$field.height()) / 2  //padding+border
             // DRR 08/19/2014 added 3.5 offset to fine tune position for AEPUtilities
-            var heightPad = (this.$field.outerHeight(true) - this.$field.height()) / 2 - 3.5; //padding+border - 3.5 
+            //var heightPad = (this.$field.outerHeight(true) - this.$field.height()) / 2 - 3.5; //padding+border - 3.5 
             this.$suggOverlay = $("<span class='" + this.options.suggClass + "' />").css({
                 display: "block",
                 "box-sizing": "content-box", //standardize
@@ -121,7 +121,8 @@
             this.$cval.html("");
 
             // DRR 08/18/2014 added fix to call validation after autocomplete https://github.com/10w042/email-autocomplete/issues/4 
-            this.$field.validate();
+            //this.$field.valid();
+            //this.$field.validate();            
         },
 
         /**
@@ -236,8 +237,3 @@
 
 })(jQuery, window, document);
 
-(function ($) {
-    $(function () {
-        $("[data-autocomplete-enabled='true']").emailautocomplete();
-    });
-}(jQuery));
