@@ -1,7 +1,7 @@
 jquery.email-autocomplete.js v0.1.0
 =========
 
-[![Build Status](https://travis-ci.org/10w042/email-autocomplete.svg?branch=master)](https://travis-ci.org/10w042/email-autocomplete)
+[![Build Status](https://travis-ci.org/myn/email-autocomplete.svg?branch=master)](https://travis-ci.org/myn/email-autocomplete)
 
 A jQuery plugin that suggests and autocompletes the domain whenever your users type in an email address field.
 
