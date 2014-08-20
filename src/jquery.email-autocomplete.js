@@ -38,6 +38,13 @@
       this.$field.on("keyup.eac", $.proxy(this.displaySuggestion, this));
 
       this.$field.on("blur.eac", $.proxy(this.autocomplete, this));
+	  
+	  this.$field.on("keydown.eac", $.proxy(function (e) {
+              //  User hits enter while in field, treat as submit so autocomplete
+              if (e.which === 13) {
+                  this.autocomplete();
+              }
+          }, this));
 
       //get input padding,border and margin to offset text
       this.fieldLeftOffset = (this.$field.outerWidth(true) - this.$field.width()) / 2;
